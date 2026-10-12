@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-skywire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skywire}
+      POSTGRES_DB: ${POSTGRES_DB:-skywire}
+    ports:
+      # Bound to localhost only: the dev password is not meant to face a network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot: applies migrations and loads the airports reference table, then exits.
+  migrate:
+    build: ./backend
+    command: sh -c "alembic upgrade head && python scripts/load_airports.py"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-skywire}:${POSTGRES_PASSWORD:-skywire}@db:5432/${POSTGRES_DB:-skywire}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  pgdata:
