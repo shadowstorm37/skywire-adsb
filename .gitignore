@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project: OpenSky credentials download and raw Phase 0 captures
+credentials.json
+backend/data/spike/
